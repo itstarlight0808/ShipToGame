@@ -1,7 +1,12 @@
-body{
+#main_div{
     background : green;
 }
 .title{
     padding : 5px;
     color : white;
+}
+.ui-widget-overlay.modal-opened{
+    background: rgb(0, 0, 0);
+    opacity: 0.5;
+    filter: Alpha(Opacity=50);
 }
