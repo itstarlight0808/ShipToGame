@@ -38,35 +38,38 @@ $("head").append(style);
                 src : '',
                 width : 60,
                 height : 100,
-                position :{
-                        x : 100,
-                        y : 20
-                }
+                position : [
+                    { x : 33, y : 47 },
+                    { x : 83, y : 50 },
+                    { x : 133, y : 53 },
+                ]
             },
             unlockImage : {
-
+                src : ""
             }
         }
         opts.boxImage = {...opts.boxImage, ...options.boxImage};
         opts.lockImage = {...opts.lockImage, ...options.lockImage};
+        opts.unlockImage = {...opts.unlockImage, ...options.unlockImage};
 
         var boxImage = `<img src='${opts.boxImage.lock_src}' width="${opts.boxImage.width}" height="${opts.boxImage.height}" class='box-image' alt='Crate with Locks'/>`;
         $(container).addClass("box-container")
                     .append(boxImage);
-        $(container).append(`<img src="${opts.lockImage.src}" width="${opts.lockImage.width}" style="left:${opts.lockImage.position.x};top:${opts.lockImage.position.y}" class='lock-image'/>`);
+        for(let one of opts.lockImage.position)
+            $(container).append(`<img src="${opts.lockImage.src}" width="${opts.lockImage.width}" style="left:${one.x};top:${one.y}" class='lock-image'/>`);
         $(container+" .box-image").mouseover(hoverBox);
         $(container+" .lock-image").mouseover(hoverLock)
-                                .click((e)=>{clickLock(e,opts.boxImage.unlock_src)});
+                                .click((e)=>{clickLock(e, opts.boxImage.unlock_src, opts.unlockImage.src)});
     };
 }());
 var hoverLock = (e)=>{
     $(e.target).data('visit', '1');
 }
-var clickLock = (e, unlockBox_src)=>{
+var clickLock = (e, unlockBox_src, unlock_src)=>{
     var container = $(e.target).parent();
     var lockImage = container.find(".lock-image");
-    if($(lockImage).data('unlocked'))
-        return;
+    // if($(lockImage).data('unlocked'))
+    //     return;
     if($("#lock_mechanism_dialog").length)
         $("#lock_mechanism_dialog").remove();
     buildLockMechanismDialog();
@@ -86,47 +89,60 @@ var clickLock = (e, unlockBox_src)=>{
             $(".ui-widget-overlay").removeClass('modal-opened');
         }
     })
-    $("#lock_mechanism_dialog").data('container', container)
-                                .data('unlockBox_src', unlockBox_src);
+    $("#lock_mechanism_dialog").data('lock', e.target)
+                               .data('unlockBox_src', unlockBox_src)
+                               .data('unlock_src', unlock_src);
 }
 var open_box = () => {
-    let container = $("#lock_mechanism_dialog").data('container');
+    let lockImage = $("#lock_mechanism_dialog").data('lock');
+    let container = $(lockImage).parent();
     let unlockBox_src = $("#lock_mechanism_dialog").data('unlockBox_src');
-    
-    var boxImage = $(container).find(".box-image");
-    var lockImage = $(container).find(".lock-image");
-    $(lockImage).css('top', (intVal($(lockImage).css('top'))+15)+'px');
-    $(lockImage).data('unlocked', '1');
-    update_animation(boxImage, lockImage, 1);
+    let unlock_src = $("#lock_mechanism_dialog").data('unlock_src');
 
-    $(boxImage).attr('src', unlockBox_src);
+    $(lockImage).data('unlocked', '1');
+    $(lockImage).attr('src', unlock_src).fadeOut();
+
+    let isAllUnlocked = 0;
+    $(container).find('.lock-image').each((index, el) => {
+        if($(el).data('unlocked') === '1')
+            isAllUnlocked++;
+    })
+    if(isAllUnlocked === 3){
+        let boxImage = $(container).find(".box-image");
+        $(boxImage).attr('src', unlockBox_src);
+    }
 }
 var hoverBox = (e)=>{
     let lockImage = $(e.target).parent().find('.lock-image');
-    if($(lockImage).data('visit') == '1'){
-        $(lockImage).data('visit', '0');
+    let isVisit = $(lockImage).filter((index, el) => $(el).data('visit') == '1').length;
+    if(isVisit){
+        $(lockImage).each((index, el) => $(el).data('visit', '0'));
         return;
     }
     var boxImage = $(e.target);
     update_animation(boxImage, lockImage);
 
     $(boxImage).css('animation-name', 'animateBox');
-    $(lockImage).css('animation-name', 'movelock');
+    $(lockImage).each((index, el) => $(el).css('animation-name', `movelock${index}`));
     setTimeout(()=>{
         $(boxImage).css('animation-name', '');
-        $(lockImage).css('animation-name', '');
+        $(lockImage).each((index, el) => $(el).css('animation-name', ''));
     }, 1000);
 }
 
 var intVal = (value) => {
     return parseInt(value.substring(0, value.length-2));
 }
-var update_animation = (boxImage, lockImage, unlocked=0) => {
+var update_animation = (boxImage, lockImage) => {
     let width = $(boxImage).width();
     let height = $(boxImage).height();
     
-    let lock_top = intVal($(lockImage).css('top'));
-    let lock_left = intVal($(lockImage).css('left'));
+    let lock = $(lockImage).map((index, el) => {
+        return {
+            top : intVal($(el).css('top')),
+            left : intVal($(el).css('left'))
+        }
+    })
 
     var keyframe = `
         <style id="animateBox">
@@ -135,17 +151,21 @@ var update_animation = (boxImage, lockImage, unlocked=0) => {
                 50% {width : ${width-40}px; height : ${height+40}px;}
                 100% {width : ${width+20}px; height : ${height-20}px;}
             }
-            @keyframes movelock{
-                50% {left : ${lock_left-13}px; top : ${lock_top+13}px;}
-                100% {left : ${lock_left+5}px; top : ${lock_top-5}px;}
+            @keyframes movelock0{
+                50% {left : ${lock[0].left-10}px; top : ${lock[0].top+13}px;}
+                100% {left : ${lock[0].left+5}px; top : ${lock[0].top-5}px;}
+            }
+            @keyframes movelock1{
+                50% {left : ${lock[1].left-13}px; top : ${lock[1].top+13}px;}
+                100% {left : ${lock[1].left+5}px; top : ${lock[1].top-5}px;}
+            }
+            @keyframes movelock2{
+                50% {left : ${lock[2].left-16}px; top : ${lock[2].top+13}px;}
+                100% {left : ${lock[2].left+5}px; top : ${lock[2].top-5}px;}
             }
         </style>`;
     if(!$("style[id='animateBox']").length)
         $("head").append(keyframe);
-    if(unlocked==1){
-        $("style[id='animateBox']").remove();
-        $("head").append(keyframe);
-    }
 }
 
 /**
@@ -157,6 +177,9 @@ const lockLetters = [
     [1, 2, 3, 4, 5, 6, 7, 8, 9, 0],
     ["A", "B", "C", "D"],
     [3, 4, 5, 6, 7]
+];
+const password = [
+    "2B3", "4C5", "0A6"
 ]
 const letter_height = 60;
 const init_top_margin = -Math.floor(letter_height/2)
@@ -324,7 +347,15 @@ var unlock = () => {
         let el = document.elementFromPoint(x0+focus_pos.x+i*focus_pos.space, y0+focus_pos.y);
         letter.push($(el).text());
     }
-    if(letter.join('') == "2B3"){
+
+    let lockImage = $("#lock_mechanism_dialog").data('lock');
+    let container = $(lockImage).parent();
+    let index;
+    container.find('.lock-image').each((idx, el) => {
+        if(el === lockImage)
+            index = idx;
+    });
+    if(letter.join('') == password[index]){
         $(".unlock-btn").removeClass('locked')
                         .addClass('unlocked')
                         .text("Success")
