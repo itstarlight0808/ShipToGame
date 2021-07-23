@@ -10,3 +10,8 @@
     opacity: 0.5;
     filter: Alpha(Opacity=50);
 }
+.ui-widget-header {
+    border: 1px solid #3e47ac;
+    background: #474747;
+    color: #00ffff;
+}

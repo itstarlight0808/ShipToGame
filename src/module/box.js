@@ -78,7 +78,7 @@ var clickLock = (e, unlockBox_src, unlock_src)=>{
         modal : true,
         width : "auto",
         height : "auto",
-        minWidth : 400,
+        minWidth : 450,
         minHeight : 350,
         show : "fade",
         closeOnEscape : true,
@@ -176,10 +176,11 @@ var update_animation = (boxImage, lockImage) => {
 const lockLetters = [
     [1, 2, 3, 4, 5, 6, 7, 8, 9, 0],
     ["A", "B", "C", "D"],
-    [3, 4, 5, 6, 7]
+    [3, 4, 5, 6, 7],
+    ["A", "B", "C", "D", "E"]
 ];
 const password = [
-    "2B3", "4C5", "0A6"
+    "2B3E", "4C5B", "0A6A"
 ]
 const letter_height = 60;
 const init_top_margin = -Math.floor(letter_height/2)
@@ -206,9 +207,14 @@ var buildLockMechanismDialog = () => {
                 display : flex;
                 align-items : center;
             }
+            .hint-text {
+                font-weight : 700;
+                font-size : 12px;
+            }
             .mechanism-container{
                 position : relative;
                 display : flex;
+                margin : 15px 0px;
                 background : linear-gradient(to bottom, #c4c4c4 0%,#676767 100%);
                 border-radius : 5px;
             }
@@ -236,7 +242,6 @@ var buildLockMechanismDialog = () => {
                 padding : 0px 15px;
             }
             .unlock-btn {
-                margin-top : 15px;
                 font-weight : 700;
                 color : red;
                 border-radius : 5px;
@@ -262,6 +267,12 @@ var buildLockMechanismDialog = () => {
     var html = `
         <div id='lock_mechanism_dialog'>
             <div align="center">
+                <div class="hint-text text-left">
+                    <span>
+                        1. Scroll : Scroll Up or Down.
+                        <br>2. Mouse : Hover Lock and Click Mouse.
+                    </span>
+                </div>
                 <div class="mechanism-container">
                     ${lock_html}
                 </div>
@@ -294,37 +305,45 @@ var js_event_function = ()=>{
             moveLetterFromBottom(lock_el, shift_cnt, margin_top);
     });
     // for Phone users..
-    $("#lock_mechanism_dialog").mousedown((e)=>{
-        $(e.target).parent().data('start-pos', {x : e.clientX, y : e.clientY});
-    }).mouseup((e)=>{
-        $(".one-lock").data('start-pos', '');
-    })
-    $("#lock_mechanism_dialog").mousemove((e)=>{
-        var lock_el;
-        var start_pos;
-        $(".one-lock").each((idx, el)=>{
-            if(!$(el).data('start-pos'))
-                return;
-            lock_el = el;
-            start_pos = $(el).data('start-pos');
-        })
-        if(!lock_el)
-            return;
-        let offsetY = e.clientY - start_pos.y;
-        let direction = offsetY>0?"up":"down";
-        let shift_cnt = Math.abs(offsetY)%10;
-        if(shift_cnt!=0)
-            return;
-
+    $(".one-lock").click((e) => {
+        let lock_el = $(e.target).parent(".one-lock");
         let first_letter = $(lock_el).children().first();
         let margin_top = $(first_letter).css('margin-top');
         $(first_letter).removeAttr('style');
 
-        if(direction=="down")
-            moveLetterFromTop(lock_el, 1, margin_top);
-        else
-            moveLetterFromBottom(lock_el, 1, margin_top);
+        moveLetterFromTop(lock_el, 1, margin_top);
     })
+    // $("#lock_mechanism_dialog").mousedown((e)=>{
+    //     $(e.target).parent(".one-lock").data('start-pos', {x : e.clientX, y : e.clientY});
+    // }).mouseup((e)=>{
+    //     $(".one-lock").data('start-pos', '');
+    // })
+    // $("#lock_mechanism_dialog").mousemove((e)=>{
+    //     var lock_el;
+    //     var start_pos;
+    //     $(".one-lock").each((idx, el)=>{
+    //         if(!$(el).data('start-pos'))
+    //             return;
+    //         lock_el = el;
+    //         start_pos = $(el).data('start-pos');
+    //     })
+    //     if(!lock_el)
+    //         return;
+    //     let offsetY = e.clientY - start_pos.y;
+    //     let direction = offsetY>0?"up":"down";
+    //     let shift_cnt = Math.abs(offsetY)%10;
+    //     if(shift_cnt!=0)
+    //         return;
+
+    //     let first_letter = $(lock_el).children().first();
+    //     let margin_top = $(first_letter).css('margin-top');
+    //     $(first_letter).removeAttr('style');
+
+    //     if(direction=="down")
+    //         moveLetterFromTop(lock_el, 1, margin_top);
+    //     else
+    //         moveLetterFromBottom(lock_el, 1, margin_top);
+    // })
 }
 var moveLetterFromTop = (lock_el, shift_cnt, margin_top) => {
     for(let i=0;i<shift_cnt;i++){
@@ -343,7 +362,7 @@ var unlock = () => {
     let x0 = $(".mechanism-container").offset().left;
     let y0 = $(".mechanism-container").offset().top;
     let letter = [];
-    for(let i=0; i<3; i++){
+    for(let i=0; i<lockLetters.length; i++){
         let el = document.elementFromPoint(x0+focus_pos.x+i*focus_pos.space, y0+focus_pos.y);
         letter.push($(el).text());
     }
